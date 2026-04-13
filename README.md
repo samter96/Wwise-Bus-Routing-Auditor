@@ -39,7 +39,7 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 ### 1단계 — 저장소 클론 또는 ZIP 다운로드
 
 ```bash
-git clone https://github.com/ljh2207/Wwise-Bus-Routing-Auditor.git
+git clone https://github.com/samter96-stack/Wwise-Bus-Routing-Auditor.git
 ```
 
 또는 페이지 상단 **Code → Download ZIP** 으로 다운로드 후 원하는 위치에 압축 해제.
