@@ -73,10 +73,4 @@
 ### 클린 설치 검증 (2회)
 - 로컬 전체 삭제 → GitHub 클론 → `install.bat` (uv Python 탐지, .venv, waapi-client) → `install_addon.bat` (JSON 생성) 모두 정상
 
-### V.2.0 알고리즘 제안서
-- 5-Tier 알고리즘 설계 제안서 PDF 제작 → 바탕화면 저장
-  - Tier 1: Signal Flow Graph (고아/순환/컨버전스 탐지)
-  - Tier 2: 의미론적 카테고리 자동 분류 (내장 매핑 테이블)
-  - Tier 3: 프로젝트 관습 자동 학습 (클러스터링)
-  - Tier 4: Multi-Criteria 복합 스코어링 (Critical/Warning/Info)
-  - Tier 5: AI 임베딩 이상 탐지 (로컬 + LLM 옵션)
+
