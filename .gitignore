@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+bus_routing_rules.json
+*.txt
+!requirements.txt
