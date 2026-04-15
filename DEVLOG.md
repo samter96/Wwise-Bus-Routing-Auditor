@@ -59,30 +59,6 @@
 
 ---
 
-## 2026-04-13  —  UI 전면 개편 (상업용 플러그인 수준)
-
-### 디자인 시스템 교체
-- **컬러 팔레트**: GitHub Dark 테마 기반 — `#0D1117` 배경, `#58A6FF` 액센트, `#3FB950` OK, `#D29922` 경고
-- **타이포그래피**: Segoe UI (UI 텍스트 전체) + Consolas (데이터/코드)
-
-### 애니메이션 버튼 (`_ab` 팩토리)
-- 8가지 프리셋: primary, danger, ghost, add, add_bus, remove, lang, muted
-- `<Enter>` hover / `<Button-1>` press / `<ButtonRelease-1>` release 상태 전환
-- `disabled` 상태에서는 애니메이션 비활성화
-
-### 인터랙션 개선
-- **Entry 포커스 글로우**: `<FocusIn>/<FocusOut>` 바인딩으로 `highlightbackground` 색 전환
-- **Treeview 교차 행**: `row_e`/`row_o` 태그 + `violation`/`unset` 포어그라운드 멀티태그
-- **상태 도트 펄싱**: WAAPI 연결 중 `root.after()` 루프로 도트 색 토글
-
-### 레이아웃 재설계
-- 헤더바: ◈ 아이콘 + 제목 + 버전 / 중앙 상태 표시 / 우측 버튼
-- 룰 패널: 2px 액센트 상단 바 + BG2 카드, 컬럼 헤더 분리
-- 액션바: primary 스캔 버튼 + ghost 보조 버튼 + danger 재라우팅 버튼 계층화
-- 재라우팅 다이얼로그: 헤더 액센트 바, 교차 행 테이블, 하단 취소/적용 푸터
-
----
-
 ## 2026-04-13  —  GitHub 배포 및 검증
 
 ### 배포
@@ -96,4 +72,36 @@
 ### 클린 설치 검증 (2회)
 - 로컬 전체 삭제 → GitHub 클론 → `install.bat` (uv Python 탐지, .venv, waapi-client) → `install_addon.bat` (JSON 생성) 모두 정상
 
+---
 
+## 2026-04-14
+
+### 버그 수정 (V2 신호 흐름 3종)
+
+- **노드 구조 사라짐 (SFX만 표시)**: `_build_graph`에서 `filePath`를 multi-type `ofType` 쿼리에 포함하면 Wwise가 `{"return":[]}` 반환 → 그래프 비어 있어 `_get_signal_chain`이 Sound 노드만 반환. **수정**: Phase 1(전체 계층, filePath 제외) + Phase 2(WorkUnit 전용 filePath fetch) 2단계 분리. Phase 2 결과로 `.wwu` 확장자 없는 WorkUnit → `PhysicalFolder` 타입으로 교정.
+- **노드 hover/click 애니메이션 없음**: `_draw_node`에서 `cv.create_rectangle()` 반환값을 `rect`에 저장하지 않아 클로저 내 `NameError` → 첫 줄을 `rect = cv.create_rectangle(...)` 으로 수정.
+- **자동 리빌드 미동작**: 위 Bug 1로 인해 그래프가 비어 있어 리빌드해도 변화 없음. Bug 1 수정 후 정상화. 추가로 `_register_subscriptions` 반환값(등록 성공 수)을 상태 바에 `⚡ 자동감지 N개`로 표시해 활성 여부 가시화.
+
+---
+
+## 2026-04-15  ·  UI 개선 8종
+
+### 기능 변경
+
+1. **상태바 분리**: 헤더에 프로젝트 이름(`_proj_lbl`, ACCENT 색) + 상태 메시지(`_status_lbl`) 분리 표시. `_set_proj_name()` 별도 메서드. `_cur_status_key/args`로 언어 전환 시 상태 메시지 자동 재번역 (`_refresh_lang`에서 처리).
+
+2. **결과 목록 상속/오버라이드 색깔**: `inherited_vio` 태그(주황 WARN) / `overridden_vio` 태그(빨강 ERR_CLR)로 분리. `_apply_filter`에서 `r.get("inherited")` 기준으로 태그 결정.
+
+3. **에셋 이름 기준 탭도 동일 색깔 적용**: `_apply_filter`가 `is_name` 여부와 무관하게 `inherited_vio`/`overridden_vio` 태그 사용.
+
+4. **마우스오버 텍스트 하이라이트**: `<Motion>` 이벤트로 hover 행 감지 → `_hover` 태그(bold) 추가, `<Leave>`에서 원상 복귀. 결과 목록 트리 + 신호 흐름 탭 위반 목록 모두 적용.
+
+5. **히트맵 레이아웃 통일**: `_update_heatmap`이 에셋 이름/WU 기준 동일 코드 → `cv.update_idletasks()` 후 `winfo_width()` 사용해 실제 너비 기준 동적 COLS 계산. 두 탭 동일 결과.
+
+6. **버스 히트맵 전면 재설계**: 룰/키워드 무관, 프로젝트 전체 버스를 `_bus_hierarchy` 계층 DFS 순서대로 나열. 초록(위반 없음) 포함 전체 표시. 위반율 = 해당 버스에 직접 라우팅된 Sound 중 위반 비율. `sort_by_vio` 체크박스 제거. 위반율 정의를 헤더 오른쪽에 한줄 표시.
+
+7. **탭 이름 변경**: "결과 목록" → "키워드 설정 / 검색" (한/영 모두).
+
+8. **룰 초기화 버튼**: "룰 저장" 오른쪽에 "룰 초기화(danger)" 버튼. 클릭 시 `askyesno` 경고 팝업 → 확인하면 모든 rule_rows 제거 + JSON 저장.
+
+9. **버스 트리 선택 필터 수정**: `_on_sf_bus_select`에서 서브트리 전체가 아닌 선택한 버스 자신에 직접 할당된 위반만 필터링 (`bus_key ==` 정확 비교).

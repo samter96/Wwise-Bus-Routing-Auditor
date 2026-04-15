@@ -17,9 +17,9 @@ if errorlevel 1 (
 
 echo.
 echo [DONE] Wwise Add-on registered:
-echo %ADDON_DIR%\BusRoutingAuditor.json
+echo   %ADDON_DIR%\BusRoutingAuditor.json
 echo.
-echo If Wwise is running: Menu ^> Tools ^> Reload Command Add-ons
+echo If Wwise is running: Tools ^> Reload Command Add-ons
 echo Otherwise restart Wwise to see "Bus Routing Auditor" in the Tools menu.
 echo.
 pause
