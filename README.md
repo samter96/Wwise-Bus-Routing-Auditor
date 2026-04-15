@@ -4,6 +4,7 @@
 Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검수 툴입니다.  
 프로젝트 전체 Sound 오브젝트를 스캔하여 **에셋 이름** 또는 **Work Unit / 계층 경로** 기준으로  
 버스 라우팅 위반을 탐지하고, 선택한 항목을 일괄 재라우팅합니다.
+지원 언어 : EN/KOR
 
 설치 전 실행중인 Wwise와 Wwise Launcher를 종료하고 설치하십시오.
 
@@ -83,14 +84,31 @@ Wwise가 열려 있다면 **메뉴 → Tools → Reload Command Add-ons**
 ## 사용 방법
 
 1. Wwise 메뉴 → `Tools > Bus Routing Auditor` 클릭
+
+<img width="702" height="53" alt="image" src="https://github.com/user-attachments/assets/2eb937cb-63fc-4a12-9a58-ebc8ea6c87db" />
+
 2. 상단에 **"연결됨"** 상태가 표시되면 준비 완료
+
+<img width="752" height="39" alt="image" src="https://github.com/user-attachments/assets/502166f2-222c-4f7f-8986-3e6951590e3c" />
+
 3. **스캔 1 / 스캔 2** 탭에서 룰 설정 후 **▶ 스캔 실행**
+
+<img width="1602" height="917" alt="image" src="https://github.com/user-attachments/assets/63fa171d-6aab-4846-8ac8-0d79346ec6f8" />
+
 4. 결과 목록에서 위반 항목 확인
    - 항목 **더블클릭** → Wwise Project Explorer에서 해당 오브젝트 자동 선택
    - 항목 선택(다중 가능) 후 **⟲ 일괄 재라우팅** 으로 버스 수정
+   
+<img width="1604" height="915" alt="image" src="https://github.com/user-attachments/assets/71625754-6912-4ce7-8cb3-18efef31d2d8" />
+
 5. **↓ CSV 내보내기** 로 결과를 파일로 저장
 6. **신호 흐름** 탭에서 버스별 위반 에셋과 라우팅 경로를 시각적으로 확인
+
+<img width="1603" height="906" alt="image" src="https://github.com/user-attachments/assets/f3be1855-5cc7-4acb-9d77-528145b47146" />
+
 7. **히트맵** 탭에서 버스별 위반율을 한눈에 파악
+
+<img width="1612" height="856" alt="image" src="https://github.com/user-attachments/assets/1a4f430d-ba0f-463e-9471-d366900763e5" />
 
 > Wwise를 종료하면 툴도 자동으로 함께 닫힙니다.
 
@@ -108,7 +126,7 @@ Sound 오브젝트의 **이름**을 단어 토큰 단위로 검사합니다.
 | 이름에 `UI` 포함 + 버스 이름에 `UI` 없음 | ❌ 위반 |
 | 이름에 `UI` 포함 + 버스 미설정 (상속됨) | ⚠ 위반 (옵션) |
 
-**단어 토큰이란?**  
+**★단어 토큰이란?**  
 `_` / Space / `-` / `.` 등으로 구분된 단어 단위입니다.  
 `UI` → `UI_Click` ✓ · `NPC_UI` ✓ · `BUILD` ✗ · `QUIT` ✗
 
