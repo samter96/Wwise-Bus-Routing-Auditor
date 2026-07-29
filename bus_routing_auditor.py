@@ -405,51 +405,141 @@ STRINGS = {
 }
 
 # ── Color System ─────────────────────────────────────────────────────────────
-BG      = "#0D1117"   # main window bg
-BG2     = "#161B22"   # card / rule panel
-BG3     = "#1C2128"   # elevated panel / header areas
-PANEL   = "#21262D"   # inputs, raised buttons
-BORDER  = "#30363D"   # subtle borders
-BORDER2 = "#444C56"   # hover-state borders
-ACCENT  = "#58A6FF"   # primary blue
-ACCENT2 = "#A78BFA"   # secondary purple (V2)
-DANGER  = "#DA3633"   # danger
-OK_CLR  = "#3FB950"   # success
-WARN    = "#D29922"   # warning/amber
-ERR_CLR = "#F85149"   # error red (bright)
-FG      = "#E6EDF3"   # primary text
-FG_DIM  = "#8B949E"   # secondary text
-FG_MUT  = "#484F58"   # muted / placeholder
-SEL_BG  = "#1F6FEB"   # treeview selection
+# SoundField 의 neutral(무채색) 테마를 그대로 이식.
+# 괄호 안은 SoundField theme.py COLORS_GREY 의 대응 키.
+BG        = "#1c1c1c"   # main window bg           (bg)
+BG2       = "#1f1f1f"   # card / rule panel        (bg_panel)
+BG3       = "#262626"   # elevated panel / header  (bg_elev)
+PANEL     = "#2a2a2a"   # inputs, raised buttons   (bg_control_hi)
+FIELD     = "#1a1a1a"   # 입력 필드 바닥           (bg_control)
+BORDER    = "#303030"   # subtle borders           (border)
+BORDER2   = "#3a3a3a"   # hover-state borders      (border_strong)
+ACCENT    = "#888888"   # 강조 — 무채색 통일       (accent)
+ACCENT_HI = "#999999"   #                          (accent_hover)
+ACCENT_LO = "#777777"   #                          (accent_pressed)
+ON_ACCENT = "#1a1a1a"   # accent 채움 위 글자      (on_accent)
+ACCENT2   = "#9c7fc7"   # 보조 강조 — 채도 낮춘 라벤더
+HOVER     = "#232323"   #                          (hover / row_hover)
+ROW_ALT   = "#1a1a1a"   #                          (row_alt)
+SEL_BG    = "#303030"   # treeview selection — 무채색이라 한 단계 밝게 (row_playing)
+SEL_FG    = "#e8e8e8"   # 선택 행 글자
+FG        = "#c8c8c8"   # primary text             (text)
+# 아래 둘만 SoundField 값(#707070 / #4a4a4a)보다 밝게 올렸다. Tk 는 Qt 보다
+# 글자를 얇게 그려서 같은 hex 라도 더 흐리게 보이기 때문 — 체감 밝기를 맞춘 값.
+FG_DIM    = "#8a8a8a"   # secondary text           (text_secondary 보정)
+FG_MUT    = "#6a6a6a"   # muted / placeholder      (text_muted 보정)
+
+# 상태색 — 검수 결과 구분이 색으로 남아야 하므로 채도만 낮춰 유지한다.
+OK_CLR  = "#6fb58a"   # success
+WARN    = "#d2a24e"   # warning/amber
+ERR_CLR = "#c44848"   # error red
+DANGER  = "#b83f3f"   # danger — ERR_CLR 보다 한 단계 어둡게
+WARN2   = "#c07a55"   # 경고 상위 단계 (15~35%) — WARN 과 ERR_CLR 사이
+
+# 그래프 노드 / 히트맵 셀 — 무채색 바닥에 얹는 아주 옅은 상태 색조
+TINT_OK_BG,    TINT_OK_LINE    = "#1a2420", "#2c4237"
+TINT_WARN_BG,  TINT_WARN_LINE  = "#242018", "#413828"
+TINT_WARN2_BG, TINT_WARN2_LINE = "#241d16", "#40301f"
+TINT_ERR_BG,   TINT_ERR_LINE   = "#241a1a", "#432525"
 
 # ── Typography ───────────────────────────────────────────────────────────────
-_UI     = "Segoe UI"
-_MN     = "Consolas"
-FONT_H1    = (_UI, 11, "bold")
-FONT_H2    = (_UI, 10, "bold")
-FONT_UI    = (_UI,  9)
-FONT_UIB   = (_UI,  9, "bold")
-FONT_SM    = (_UI,  8)
-FONT_CODE  = (_MN,  9)
-FONT_CODE_B= (_MN,  9, "bold")
-FONT_CODE_L= (_MN, 10, "bold")
+# SoundField 와 같은 우선순위. Tkinter 는 QSS 처럼 자동 폴백이 없어서
+# init_fonts(root) 에서 실제 설치된 것을 골라 아래 스펙을 in-place 로 채운다.
+# 튜플이 아니라 리스트여야 확정 결과가 별칭(MONO 등)에도 그대로 공유된다.
+# 보통 굵기는 Pretendard Medium. Tk 가 Pretendard Regular 를 9pt 에서 너무
+# 얇게 그려 글자가 뿌옇게 보이기 때문.
+_UI_STACK   = ["Pretendard Medium", "Pretendard", "Segoe UI Variable Text",
+               "Segoe UI", "Malgun Gothic", "Tahoma"]
+_MONO_STACK = ["Cascadia Code", "Cascadia Mono", "Consolas", "Courier New"]
+
+# 굵은 글씨는 (글꼴, 굵기) 짝으로 고른다. Pretendard 에는 Bold 면이 없어서
+# weight="bold" 를 주면 Windows 가 Regular 를 부풀려 가짜 볼드를 만들고,
+# 그게 번져서 안개처럼 뿌옇게 보인다. 실제로 존재하는 SemiBold 면을
+# weight="normal" 로 쓰면 합성이 일어나지 않아 깨끗하다.
+_UI_BOLD_STACK = [("Pretendard SemiBold",   "normal"),
+                  ("Segoe UI Variable Text", "bold"),
+                  ("Segoe UI",               "bold"),
+                  ("Malgun Gothic",          "bold"),
+                  ("Tahoma",                 "bold")]
+_UI     = "Segoe UI"    # 보통 굵기 — init_fonts() 에서 확정
+_UI_B   = "Segoe UI"    # 굵은 글씨 — init_fonts() 에서 확정
+_UI_B_W = "bold"        # 굵은 글씨용 weight — init_fonts() 에서 확정
+_MN     = "Consolas"    # init_fonts() 에서 확정
+FONT_H1    = [_UI_B, 11, _UI_B_W]
+FONT_H2    = [_UI_B, 10, _UI_B_W]
+FONT_UI    = [_UI,   9]
+FONT_UIB   = [_UI_B,  9, _UI_B_W]
+FONT_SM    = [_UI,   8]
+FONT_CODE  = [_MN,  9]
+FONT_CODE_B= [_MN,  9, "bold"]
+FONT_CODE_L= [_MN, 10, "bold"]
+
+_UI_FONTS      = (FONT_UI, FONT_SM)
+_UI_BOLD_FONTS = (FONT_H1, FONT_H2, FONT_UIB)
+_MONO_FONTS    = (FONT_CODE, FONT_CODE_B, FONT_CODE_L)
+_FONTS_READY   = False
 
 # Legacy aliases — used directly in logic code, keep same names
 MONO    = FONT_CODE
 MONO_B  = FONT_CODE_B
 MONO_LG = FONT_CODE_L
 
+
+def init_fonts(root):
+    """root 생성 직후 · 위젯 생성 전에 한 번 호출한다."""
+    global _UI, _UI_B, _UI_B_W, _MN, _FONTS_READY
+    if _FONTS_READY:
+        return
+    try:
+        available = set(tkfont.families(root))
+    except Exception:
+        available = set()
+    _UI = next((f for f in _UI_STACK if f in available), _UI_STACK[-1])
+    _MN = next((f for f in _MONO_STACK if f in available), _MONO_STACK[-1])
+    _UI_B, _UI_B_W = next((p for p in _UI_BOLD_STACK if p[0] in available),
+                          _UI_BOLD_STACK[-1])
+    for spec in _UI_FONTS:
+        spec[0] = _UI
+    for spec in _UI_BOLD_FONTS:
+        spec[0] = _UI_B
+        spec[2] = _UI_B_W
+    for spec in _MONO_FONTS:
+        spec[0] = _MN
+    # messagebox / 메뉴 등 Tk 내장 위젯도 같은 폰트를 쓰게 맞춘다.
+    for name, size, fam, wt in (("TkDefaultFont", 9, _UI, "normal"),
+                                ("TkTextFont", 9, _UI, "normal"),
+                                ("TkMenuFont", 9, _UI, "normal"),
+                                ("TkHeadingFont", 9, _UI_B, _UI_B_W),
+                                ("TkTooltipFont", 8, _UI, "normal")):
+        try:
+            tkfont.nametofont(name, root=root).configure(family=fam, size=size, weight=wt)
+        except Exception:
+            pass
+    try:
+        tkfont.nametofont("TkFixedFont", root=root).configure(family=_MN, size=9)
+    except Exception:
+        pass
+    _FONTS_READY = True
+
+
+def ui_font(size=9, bold=False):
+    """확정된 UI 폰트로 임의 크기의 스펙을 만든다."""
+    if bold:
+        return [_UI_B, size, _UI_B_W]
+    return [_UI, size]
+
+
 # ── Button animation presets  (bg, fg, hover_bg, press_bg) ───────────────────
 _BP = {
-    "primary": ("#1F6FEB", "#FFFFFF",  "#388BFD", "#1158C7"),
-    "danger":  ("#3D0E11", "#F28B82",  "#5A1317", "#2A080A"),
-    "ghost":   (PANEL,     FG,         "#2D333B", BG3),
-    "add":     ("#0A2016", OK_CLR,     "#0F2E1E", "#071612"),
-    "add_bus": ("#0A1830", ACCENT,     "#0E2244", "#071020"),
-    "remove":  (PANEL,     FG_DIM,     "#3D1A1A", "#2A0F0F"),
-    "lang":    ("#1E1833", "#BC8CFF",  "#271F42", "#140F24"),
-    "icon":    (BG3,       FG_DIM,     PANEL,     BG2),
-    "muted":   (BG2,       FG_DIM,     BG3,       BG),
+    "primary": (ACCENT,    ON_ACCENT, ACCENT_HI, ACCENT_LO),
+    "danger":  ("#2a1a1a", "#d08080", "#332020", "#221616"),
+    "ghost":   (BG3,       FG,        PANEL,     FIELD),
+    "add":     ("#1a2420", OK_CLR,    "#202c27", "#161e1b"),
+    "add_bus": ("#221f28", ACCENT2,   "#2a2632", "#1c1a22"),
+    "remove":  (PANEL,     FG_DIM,    "#332020", "#221616"),
+    "lang":    (BG2,       "#9a9a9a", BG3,       FIELD),
+    "icon":    (BG3,       FG_DIM,    PANEL,     BG2),
+    "muted":   (BG2,       FG_DIM,    BG3,       BG),
 }
 
 FIND_CMD_PRIMARY   = ["FindInProjectExplorerSelectionChannel1","FindInProjectExplorer","FindInProjectExplorer1"]
@@ -500,6 +590,7 @@ def _styled_entry(parent, var, width=16):
 class BusRoutingAuditor:
     def __init__(self, root):
         self.root = root
+        init_fonts(self.root)   # 설치된 폰트 확정 — 위젯 생성 전에 반드시 먼저
         self.root.title("Bus Routing Auditor  —  Wwise")
         sh = self.root.winfo_screenheight()
         win_h = int(sh * 0.80)
@@ -1011,20 +1102,26 @@ class BusRoutingAuditor:
                     pass
 
     def _apply_styles(self):
+        # clam 은 기본으로 입체 베벨을 그린다. lightcolor/darkcolor 를 배경과
+        # 같은 값으로 눌러 SoundField 의 플랫한 면을 재현한다.
         s = ttk.Style(); s.theme_use("clam")
 
         # Notebook / Tabs
         s.configure("TNotebook", background=BG, borderwidth=0,
-                    tabmargins=[0, 4, 0, 0])
+                    tabmargins=[0, 4, 0, 0],
+                    bordercolor=BORDER, lightcolor=BG, darkcolor=BG)
         s.configure("TNotebook.Tab",
                     background=BG2, foreground=FG_MUT,
                     padding=[18, 8], font=FONT_UIB,
                     borderwidth=0, relief="flat",
-                    focuscolor=BG2)
+                    focuscolor=BG2,
+                    bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
         s.map("TNotebook.Tab",
               background=[("selected", BG3),  ("active", PANEL)],
-              foreground=[("selected", ACCENT), ("active", FG_DIM)],
-              font=[("selected", (_UI, 9, "bold"))],
+              foreground=[("selected", FG), ("active", FG_DIM)],
+              lightcolor=[("selected", BG3), ("active", PANEL)],
+              darkcolor=[("selected", BG3), ("active", PANEL)],
+              font=[("selected", (_UI_B, 9, _UI_B_W))],
               expand=[("selected", [0, 2, 0, 0])])
 
         # Treeview
@@ -1034,28 +1131,33 @@ class BusRoutingAuditor:
                     rowheight=26,
                     font=FONT_CODE,
                     borderwidth=0,
-                    relief="flat")
+                    relief="flat",
+                    bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
         s.configure("Treeview.Heading",
                     background=BG3, foreground=FG_DIM,
                     font=FONT_UIB, relief="flat",
-                    padding=[8, 6])
+                    padding=[8, 6],
+                    bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
         s.map("Treeview",
               background=[("selected", SEL_BG)],
-              foreground=[("selected", "#FFFFFF")])
+              foreground=[("selected", SEL_FG)])
         s.map("Treeview.Heading",
-              background=[("active", PANEL)])
+              background=[("active", PANEL)],
+              foreground=[("active", FG)],
+              lightcolor=[("active", PANEL)], darkcolor=[("active", PANEL)])
 
         # Scrollbars
-        s.configure("Vertical.TScrollbar",
-                    background=PANEL, troughcolor=BG2,
-                    arrowcolor=FG_DIM, borderwidth=0,
-                    relief="flat", width=8)
-        s.configure("Horizontal.TScrollbar",
-                    background=PANEL, troughcolor=BG2,
-                    arrowcolor=FG_DIM, borderwidth=0,
-                    relief="flat", width=8)
-        s.map("Vertical.TScrollbar",   background=[("active", BORDER2)])
-        s.map("Horizontal.TScrollbar", background=[("active", BORDER2)])
+        for _orient in ("Vertical", "Horizontal"):
+            s.configure(f"{_orient}.TScrollbar",
+                        background=PANEL, troughcolor=FIELD,
+                        arrowcolor=FG_DIM, borderwidth=0,
+                        relief="flat", width=8,
+                        bordercolor=FIELD, lightcolor=PANEL, darkcolor=PANEL)
+            s.map(f"{_orient}.TScrollbar",
+                  background=[("active", BORDER2)],
+                  lightcolor=[("active", BORDER2)],
+                  darkcolor=[("active", BORDER2)],
+                  arrowcolor=[("active", FG)])
 
         # Combobox
         s.configure("TCombobox",
@@ -1063,7 +1165,8 @@ class BusRoutingAuditor:
                     foreground=FG, selectbackground=PANEL,
                     selectforeground=FG, insertcolor=FG,
                     arrowcolor=FG_DIM, borderwidth=0,
-                    relief="flat", padding=[6, 4])
+                    relief="flat", padding=[6, 4],
+                    bordercolor=BORDER, lightcolor=PANEL, darkcolor=PANEL)
         s.map("TCombobox",
               fieldbackground=[("readonly", PANEL), ("readonly !focus", PANEL)],
               foreground=[("readonly", FG), ("readonly !focus", FG)],
@@ -1583,7 +1686,7 @@ class BusRoutingAuditor:
             reg.append(lambda t=tree, c=col, k=key: t.heading(c, text=self._t(k)))
 
         # 단일 태그(bg+fg 통합) — 다중 태그 우선순위 충돌 방지
-        _BG_E = BG2; _BG_O = "#131920"
+        _BG_E = BG2; _BG_O = ROW_ALT
         tree.tag_configure("inh_e", background=_BG_E, foreground=WARN)     # 상속됨 짝수행
         tree.tag_configure("inh_o", background=_BG_O, foreground=WARN)     # 상속됨 홀수행
         tree.tag_configure("ovr_e", background=_BG_E, foreground=ERR_CLR)  # 오버라이드됨 짝수
@@ -2088,7 +2191,7 @@ class BusRoutingAuditor:
             vt.heading(col, text=hdr)
             vt.column(col, width=w, minwidth=30 if col=="src" else 60,
                       stretch=False, anchor="center" if col=="src" else "w")
-        _VBE = BG2; _VBO = "#131920"
+        _VBE = BG2; _VBO = ROW_ALT
         vt.tag_configure("inh_e", background=_VBE, foreground=WARN)
         vt.tag_configure("inh_o", background=_VBO, foreground=WARN)
         vt.tag_configure("ovr_e", background=_VBE, foreground=ERR_CLR)
@@ -2460,7 +2563,7 @@ class BusRoutingAuditor:
         bus_img = self._type_icons.get("Bus")
         cur_bus_display = cur_bus or "Master Audio Bus"
         cur_bus_id = vio.get("current_bus_id", "")
-        cv.create_rectangle(bus_x, ny, bus_x+NW, ny+NH, fill="#2A0508", outline=ERR_CLR, width=1)
+        cv.create_rectangle(bus_x, ny, bus_x+NW, ny+NH, fill=TINT_ERR_BG, outline=ERR_CLR, width=1)
         btx1 = bus_x + IP + (IW + 3 if bus_img else 0)
         if bus_img:
             cv.create_image(bus_x + IP + IW//2, ny + L1, image=bus_img)
@@ -2480,7 +2583,7 @@ class BusRoutingAuditor:
                           and cv.coords(i) == [float(bus_x), float(ny), float(bus_x+NW), float(ny+NH)]]
             _brect = _bus_items[0] if _bus_items else None
             _bh_outline = self._brighten_hex(ERR_CLR, 40)
-            _bh_fill    = self._brighten_hex("#2A0508", 20)
+            _bh_fill    = self._brighten_hex(TINT_ERR_BG, 20)
             cv.create_rectangle(bus_x, ny, bus_x+NW, ny+NH, fill="", outline="", tags=_btag)
             cv.tag_bind(_btag, "<Enter>",
                         lambda e, r=_brect, ho=_bh_outline:
@@ -2488,12 +2591,12 @@ class BusRoutingAuditor:
                              cv.config(cursor="hand2")))
             cv.tag_bind(_btag, "<Leave>",
                         lambda e, r=_brect:
-                            (cv.itemconfig(r, outline=ERR_CLR, width=1, fill="#2A0508") if r else None,
+                            (cv.itemconfig(r, outline=ERR_CLR, width=1, fill=TINT_ERR_BG) if r else None,
                              cv.config(cursor="")))
             cv.tag_bind(_btag, "<Button-1>",
                         lambda e, r=_brect, oid=cur_bus_id:
                             (cv.itemconfig(r, fill=_bh_fill) if r else None,
-                             cv.after(130, lambda: cv.itemconfig(r, fill="#2A0508") if r else None),
+                             cv.after(130, lambda: cv.itemconfig(r, fill=TINT_ERR_BG) if r else None),
                              threading.Thread(target=self._select_in_wwise,
                                               args=(oid,), daemon=True).start()))
         x = bus_x + NW + HGAP
@@ -2502,7 +2605,7 @@ class BusRoutingAuditor:
         if exp_kw:
             _draw_arrow(x - HGAP, x, OK_CLR, dashed=True)
             exp_x = x
-            cv.create_rectangle(exp_x, ny, exp_x+NW, ny+NH, fill="#061A0D", outline=OK_CLR, width=1)
+            cv.create_rectangle(exp_x, ny, exp_x+NW, ny+NH, fill=TINT_OK_BG, outline=OK_CLR, width=1)
             cv.create_text(exp_x + IP, ny + L1,
                            text=self._clip_text(f"기대 버스  ✓  {self._t('exp_bus_label')}",
                                                 NW - IP*2, FONT_SM),
@@ -2667,7 +2770,7 @@ class BusRoutingAuditor:
         # 범례
         leg_items = [
             ("✓ 위반 없음", OK_CLR), ("△ <15%", WARN),
-            ("▲ 15~35%", "#E07040"), ("✗ 35%+", ERR_CLR),
+            ("▲ 15~35%", WARN2), ("✗ 35%+", ERR_CLR),
         ]
         lx = PAD
         for txt, col in leg_items:
@@ -2687,13 +2790,13 @@ class BusRoutingAuditor:
 
             # 색상 결정
             if vio_count == 0:
-                fill, outline, fg = "#061410", "#1A4020", OK_CLR
+                fill, outline, fg = TINT_OK_BG, TINT_OK_LINE, OK_CLR
             elif ratio < 0.15:
-                fill, outline, fg = "#1A1500", "#4A3A00", WARN
+                fill, outline, fg = TINT_WARN_BG, TINT_WARN_LINE, WARN
             elif ratio < 0.35:
-                fill, outline, fg = "#1A0A00", "#5A2A00", "#E07040"
+                fill, outline, fg = TINT_WARN2_BG, TINT_WARN2_LINE, WARN2
             else:
-                fill, outline, fg = "#1A0305", "#6A1010", ERR_CLR
+                fill, outline, fg = TINT_ERR_BG, TINT_ERR_LINE, ERR_CLR
 
             cell_id = cv.create_rectangle(cx, cy, cx+CELL_W, cy+CELL_H,
                                           fill=fill, outline=outline, width=1)
