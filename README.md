@@ -1,10 +1,9 @@
 # Wwise Bus Routing Auditor
-<img width="2008" height="1179" alt="image" src="https://github.com/user-attachments/assets/3bbff2a4-3d00-494e-8a5d-f6fccc2a3af5" />
+<img width="1490" height="1003" alt="image" src="https://github.com/user-attachments/assets/db1e4cc7-0c6d-4c69-84d0-b6ef66e57f2b" />
 
 Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검수 툴입니다.  
 프로젝트 전체 Sound 오브젝트를 스캔하여 **에셋 이름** 또는 **Work Unit / 계층 경로** 기준으로  
 버스 라우팅 위반을 탐지하고, 선택한 항목을 일괄 재라우팅합니다.
-지원 언어 : EN/KOR
 
 설치 전 실행중인 Wwise와 Wwise Launcher를 종료하고 설치하십시오.
 
@@ -34,6 +33,8 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 ## 사전 요구사항
 
 - **Python 3.10 이상** — [python.org](https://www.python.org)
+- **Node.js / npm** — 소스에서 실행하거나 빌드할 때 필요
+- **Rust / Cargo** — Tauri 앱을 소스에서 빌드할 때 필요
 - **Wwise WAAPI 활성화**  
   `Project > User Preferences > Enable Wwise Authoring API (WAAPI)`  
   (기본 포트: **8080**)
@@ -42,15 +43,30 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 
 ## 설치 방법
 
-### 1단계 — 저장소 클론 또는 ZIP 다운로드
+### 빠른 설치 — 최신 릴리스 사용
+
+설치 파일만 필요한 경우 GitHub Releases에서 최신 `Bus Routing Auditor_2.0.0_x64-setup.exe` 를 다운로드해 실행합니다.
+
+- Primary: [samter96/Wwise-Bus-Routing-Auditor Releases](https://github.com/samter96/Wwise-Bus-Routing-Auditor/releases/latest)
+- Mirror: [SeunggyunYou/Wwise-Bus-Routing-Auditor Releases](https://github.com/SeunggyunYou/Wwise-Bus-Routing-Auditor/releases/latest)
+
+설치 후 Wwise에서 **Tools → Bus Routing Auditor** 로 실행합니다.
+
+### 소스 설치 — 저장소 클론 또는 ZIP 다운로드
 
 ```bash
 git clone https://github.com/samter96/Wwise-Bus-Routing-Auditor.git
 ```
 
+Mirror 저장소를 사용할 수도 있습니다.
+
+```bash
+git clone https://github.com/SeunggyunYou/Wwise-Bus-Routing-Auditor.git
+```
+
 또는 페이지 상단 **Code → Download ZIP** 으로 다운로드 후 원하는 위치에 압축 해제.
 
-### 2단계 — 가상환경 및 패키지 설치
+### 1단계 — 개발 환경 설치
 
 [`install.bat`](install.bat) 을 실행합니다.
 
@@ -59,6 +75,21 @@ install.bat
 ```
 
 `.venv` 폴더가 생성되고 `waapi-client` 가 자동 설치됩니다.
+
+### 2단계 — 앱 빌드
+
+배포용 실행 파일과 설치 파일을 만들려면 [`build_v2.bat`](build_v2.bat) 을 실행합니다.
+
+```
+build_v2.bat
+```
+
+빌드가 완료되면 아래 파일이 생성됩니다.
+
+```
+src-tauri\target\release\bus-routing-auditor.exe
+src-tauri\target\release\bundle\nsis\Bus Routing Auditor_2.0.0_x64-setup.exe
+```
 
 ### 3단계 — Wwise Tools 메뉴 등록
 
@@ -84,31 +115,14 @@ Wwise가 열려 있다면 **메뉴 → Tools → Reload Command Add-ons**
 ## 사용 방법
 
 1. Wwise 메뉴 → `Tools > Bus Routing Auditor` 클릭
-
-<img width="702" height="53" alt="image" src="https://github.com/user-attachments/assets/2eb937cb-63fc-4a12-9a58-ebc8ea6c87db" />
-
 2. 상단에 **"연결됨"** 상태가 표시되면 준비 완료
-
-<img width="752" height="39" alt="image" src="https://github.com/user-attachments/assets/502166f2-222c-4f7f-8986-3e6951590e3c" />
-
 3. **스캔 1 / 스캔 2** 탭에서 룰 설정 후 **▶ 스캔 실행**
-
-<img width="1602" height="917" alt="image" src="https://github.com/user-attachments/assets/63fa171d-6aab-4846-8ac8-0d79346ec6f8" />
-
 4. 결과 목록에서 위반 항목 확인
    - 항목 **더블클릭** → Wwise Project Explorer에서 해당 오브젝트 자동 선택
    - 항목 선택(다중 가능) 후 **⟲ 일괄 재라우팅** 으로 버스 수정
-   
-<img width="1604" height="915" alt="image" src="https://github.com/user-attachments/assets/71625754-6912-4ce7-8cb3-18efef31d2d8" />
-
 5. **↓ CSV 내보내기** 로 결과를 파일로 저장
 6. **신호 흐름** 탭에서 버스별 위반 에셋과 라우팅 경로를 시각적으로 확인
-
-<img width="1603" height="906" alt="image" src="https://github.com/user-attachments/assets/f3be1855-5cc7-4acb-9d77-528145b47146" />
-
 7. **히트맵** 탭에서 버스별 위반율을 한눈에 파악
-
-<img width="1612" height="856" alt="image" src="https://github.com/user-attachments/assets/1a4f430d-ba0f-463e-9471-d366900763e5" />
 
 > Wwise를 종료하면 툴도 자동으로 함께 닫힙니다.
 
@@ -126,7 +140,7 @@ Sound 오브젝트의 **이름**을 단어 토큰 단위로 검사합니다.
 | 이름에 `UI` 포함 + 버스 이름에 `UI` 없음 | ❌ 위반 |
 | 이름에 `UI` 포함 + 버스 미설정 (상속됨) | ⚠ 위반 (옵션) |
 
-**★단어 토큰이란?**  
+**단어 토큰이란?**  
 `_` / Space / `-` / `.` 등으로 구분된 단어 단위입니다.  
 `UI` → `UI_Click` ✓ · `NPC_UI` ✓ · `BUILD` ✗ · `QUIT` ✗
 
@@ -254,7 +268,8 @@ WAAPI의 `@OutputBus`는 로컬 저장값만 반환합니다.
 
 | 역할 | 라이브러리 / 도구 |
 |------|------------------|
-| GUI | Python `tkinter` |
+| GUI | Tauri 2 + React + TypeScript |
+| Backend | Python JSON-lines sidecar (`bus_backend.py`) |
 | Wwise 연동 | [`waapi-client`](https://pypi.org/project/waapi-client/) (WebSocket `ws://127.0.0.1:8080`) |
 | 주요 WAAPI | `ak.wwise.core.object.get` · `ak.wwise.ui.commands.execute` · `ak.wwise.core.object.setReference` |
 
@@ -264,10 +279,15 @@ WAAPI의 `@OutputBus`는 로컬 저장값만 반환합니다.
 
 ```
 Wwise-Bus-Routing-Auditor\
-  ├── bus_routing_auditor.py   ← 메인 소스 (tkinter GUI + WAAPI)
+  ├── src\                     ← React UI
+  ├── src-tauri\               ← Tauri / Rust desktop bridge
+  ├── bus_backend.py           ← WAAPI sidecar backend
+  ├── bus_routing_auditor.py   ← V1 Tkinter 레거시 소스
   ├── launch.bat               ← Wwise Add-on 진입점
-  ├── install.bat              ← 가상환경 + 패키지 설치
+  ├── install.bat              ← Tauri 개발 환경 + Python 패키지 설치
+  ├── build_v2.bat             ← backend exe + Tauri installer 빌드
   ├── install_addon.bat        ← Wwise Tools 메뉴 자동 등록
+  ├── package.json
   ├── requirements.txt
   ├── README.md
   ├── DEVLOG.md
@@ -284,4 +304,4 @@ Wwise-Bus-Routing-Auditor\
 
 ## 버전
 
-**V.2.0.0** — 2026-04-15
+**V.2.0.0** — 2026-08-31

@@ -2,6 +2,49 @@
 
 ---
 
+## 2026-08-27 · V.2.0.0 Tauri 전환
+
+### Hotfix — 스캔 무한 로딩 방지 및 WAAPI 조회 축소
+
+- `bus_backend.py`의 스캔 조회를 전체 hierarchy multi-type 조회에서 `Sound` 우선 조회 + 필요한 조상 path chunk 조회로 변경
+- multi-type 조회에서 불필요한 `filePath` 반환을 제거해 Wwise WAAPI 응답 지연/비정상 케이스를 줄임
+- backend JSON-lines command에 timeout을 추가. `scan`은 60초를 넘기면 오류 응답 후 sidecar process를 종료해 다음 요청에서 새 backend로 재시작 가능
+- React scan 호출에도 75초 UI timeout을 추가해 spinner가 영구히 남지 않도록 수정
+- 기존에 멈춰 있던 `bus_backend.exe` 프로세스가 resource 파일을 잠그고 있어 종료 후 새 backend exe와 installer를 재생성
+
+### 검증
+
+- `python -m py_compile bus_backend.py` 통과
+- `npm run build` 통과
+- `cargo check` 통과
+- `src-tauri/resources/bus_backend.exe` JSON-lines `ping` 응답 확인
+- `npm run tauri -- build` 통과
+
+---
+
+### 전면 재구축 — Tkinter 고도화 중단, Tauri / React 셸 적용
+
+- Attenuation Auditor V2의 결론을 반영해 Tkinter 스킨 고도화 대신 Tauri 2 + React + TypeScript 구조로 전환
+- `src/` React UI, `src-tauri/` Rust bridge, `bus_backend.py` JSON-lines Python sidecar 추가
+- 제품군 디자인 토큰 적용: 어두운 표면 계층, cyan/blue/violet 활성 색, amber/danger 상태 색, custom chrome, project bar, hero, metrics, scope tree, dense results table
+- Bus Routing 전용 화면 상태로 재구성: 스캔 모드(에셋 이름 / Work Unit), 룰 편집, 범위 선택, 결과 검토, Wwise 이동, CSV, 대상 버스 재라우팅
+- 기존 판정 계약 보존: Sound의 실효 OutputBus 해석, `@OverrideOutput` 조상 우선, stale 비기본 조상 보정, Sound 자체 fallback, 단어 경계 키워드 매칭, 다중 룰 OR 통과 규칙 유지
+- `launch.bat`은 release Tauri exe 우선 실행, 없으면 `npm run tauri -- dev`로 실행하도록 변경
+- `install.bat`은 Python + npm + cargo 기반 개발 환경 준비로 변경
+- `build_v2.bat` 추가: PyInstaller로 `bus_backend.exe` 생성 후 Tauri/NSIS 설치본 빌드
+
+### 검증
+
+- `python -m py_compile bus_backend.py` 통과
+- `npm run build` 통과
+- `cargo check` 통과
+- `npm run tauri -- build` 통과
+- `bus_backend.py` JSON-lines `ping` 응답 확인
+- 산출물: `src-tauri/target/release/bus-routing-auditor.exe`
+  및 `src-tauri/target/release/bundle/nsis/Bus Routing Auditor_2.0.0_x64-setup.exe`
+
+---
+
 ## WAAPI 커맨드 레퍼런스 (재조회 방지)
 
 > `mcp__sk-wwise-ui__get_commands` 로 직접 확인 — 이 Wwise 버전 기준
@@ -105,3 +148,19 @@
 8. **룰 초기화 버튼**: "룰 저장" 오른쪽에 "룰 초기화(danger)" 버튼. 클릭 시 `askyesno` 경고 팝업 → 확인하면 모든 rule_rows 제거 + JSON 저장.
 
 9. **버스 트리 선택 필터 수정**: `_on_sf_bus_select`에서 서브트리 전체가 아닌 선택한 버스 자신에 직접 할당된 위반만 필터링 (`bus_key ==` 정확 비교).
+---
+
+## 2026-08-27
+
+### Hotfix
+- Fixed scan failure: `stream did not contain valid UTF-8`.
+- Root cause: the Tauri bridge reads JSON-lines from the Python sidecar as UTF-8, while some Windows/PyInstaller stdout paths could emit Korean error text with a non-UTF-8 console encoding.
+- Fix: force Python stdout/stderr to UTF-8, run the sidecar with `PYTHONUTF8=1` and `PYTHONIOENCODING=utf-8`, and serialize protocol responses with `ensure_ascii=True`.
+- Rebuilt `src-tauri/resources/bus_backend.exe`, `src-tauri/target/release/bus-routing-auditor.exe`, and `src-tauri/target/release/bundle/nsis/Bus Routing Auditor_2.0.0_x64-setup.exe`.
+
+## 2026-08-31
+
+### 배포
+- README 설치 안내를 Tauri V2 기준으로 정리하고 GitHub Releases 최신 설치 파일 다운로드 경로를 추가.
+- `samter96/Wwise-Bus-Routing-Auditor` primary 저장소와 `SeunggyunYou/Wwise-Bus-Routing-Auditor` mirror 저장소에 같은 업데이트를 배포하도록 준비.
+- git 배포에서 `node_modules`, `dist`, `build`, `src-tauri/target`, PyInstaller sidecar exe 등 로컬/빌드 산출물을 제외하도록 `.gitignore` 정리.

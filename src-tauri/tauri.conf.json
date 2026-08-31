@@ -1,0 +1,50 @@
+{
+    "$schema":  "https://schema.tauri.app/config/2",
+    "productName":  "Bus Routing Auditor",
+    "version":  "2.0.0",
+    "identifier":  "com.busroutingauditor.desktop",
+    "build":  {
+                  "beforeDevCommand":  "npm run dev",
+                  "devUrl":  "http://127.0.0.1:1431",
+                  "beforeBuildCommand":  "npm run build",
+                  "frontendDist":  "../dist"
+              },
+    "app":  {
+                "windows":  [
+                                {
+                                    "label":  "main",
+                                    "title":  "Bus Routing Auditor",
+                                    "width":  1180,
+                                    "height":  760,
+                                    "minWidth":  860,
+                                    "minHeight":  600,
+                                    "center":  true,
+                                    "resizable":  true,
+                                    "decorations":  false,
+                                    "shadow":  false,
+                                    "backgroundColor":  "#090b0f"
+                                }
+                            ],
+                "security":  {
+                                 "csp":  "default-src \u0027self\u0027; connect-src ipc: http://ipc.localhost; img-src \u0027self\u0027 data:; style-src \u0027self\u0027 \u0027unsafe-inline\u0027; font-src \u0027self\u0027 data:"
+                             }
+            },
+    "bundle":  {
+                   "active":  true,
+                   "targets":  [
+                                   "nsis"
+                               ],
+                   "icon":  [
+                                "icons/32x32.png",
+                                "icons/128x128.png",
+                                "icons/128x128@2x.png",
+                                "icons/icon.ico"
+                            ],
+                   "category":  "Music",
+                   "shortDescription":  "Audit Wwise bus routing integrity.",
+                   "longDescription":  "Scans Wwise Sound objects for OutputBus routing mismatches using asset-name and Work Unit rules.",
+                   "resources":  {
+                                     "resources/bus_backend.exe":  "bus_backend.exe"
+                                 }
+               }
+}

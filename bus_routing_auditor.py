@@ -13,6 +13,7 @@ VERSION     = "V.2.0.0"
 WAAPI_URL   = "ws://127.0.0.1:8080/waapi"
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "bus_routing_rules.json")
+APP_ICON    = os.path.join(SCRIPT_DIR, "assets", "bus-routing-auditor-icon.png")
 WORD_SEP    = re.compile(r'[ _\-\./\\()\[\]{},;:\s]+')
 DEFAULT_CONFIG = {
     "name_rules": [
@@ -592,6 +593,7 @@ class BusRoutingAuditor:
         self.root = root
         init_fonts(self.root)   # 설치된 폰트 확정 — 위젯 생성 전에 반드시 먼저
         self.root.title("Bus Routing Auditor  —  Wwise")
+        self._set_app_icon()
         sh = self.root.winfo_screenheight()
         win_h = int(sh * 0.80)
         win_w = max(1400, int(win_h * 1.75))
@@ -636,6 +638,15 @@ class BusRoutingAuditor:
         self._load_type_icons()
         self._start_wwise_watchdog()
         self.root.after(200, lambda: threading.Thread(target=self._connect_waapi, daemon=True).start())
+
+    def _set_app_icon(self):
+        if not os.path.exists(APP_ICON):
+            return
+        try:
+            self._app_icon = tk.PhotoImage(file=APP_ICON)
+            self.root.iconphoto(True, self._app_icon)
+        except Exception:
+            pass
 
     # ── i18n ─────────────────────────────────────────────────────────────────
     def _t(self, key):

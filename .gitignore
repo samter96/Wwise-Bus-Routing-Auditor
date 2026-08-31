@@ -5,3 +5,10 @@ __pycache__/
 bus_routing_rules.json
 *.txt
 !requirements.txt
+node_modules/
+dist/
+build/
+src-tauri/target/
+src-tauri/resources/*.exe
+*.log
+*.tmp

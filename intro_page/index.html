@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wwise Bus Routing Auditor | 버스 라우팅 감사 도구</title>
+<meta name="description" content="Wwise 프로젝트의 Sound 오브젝트를 스캔해 이름과 Work Unit 기준으로 버스 라우팅 위반을 찾고, Signal Flow와 Heatmap으로 점검하는 WAAPI 기반 감사 도구 소개 페이지.">
+<style>
+  :root{
+    --ink:#0a0d13;
+    --ink-1:#0f131b;
+    --ink-2:#141922;
+    --ink-3:#1c2331;
+    --line:rgba(90,140,196,.14);
+    --line-2:rgba(90,140,196,.28);
+    --grid:rgba(90,140,196,.052);
+    --text:#dbe3ec;
+    --muted:#8a99ab;
+    --muted-2:#5a6879;
+    --accent:#5290d4;
+    --wave:#5dd0d8;
+    --amber:#c89840;
+    --violet:#9a8cf0;
+    --ok:#62c77d;
+    --warn:#d8b458;
+    --err:#ef6b6b;
+    --mono:"Cascadia Mono","Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,Menlo,monospace;
+    --sans:"Segoe UI","Malgun Gothic",-apple-system,BlinkMacSystemFont,system-ui,Roboto,Helvetica,Arial,sans-serif;
+    --maxw:1760px;
+    --pad:clamp(14px,2.2vw,34px);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.65;
+    letter-spacing:0;
+    background:
+      radial-gradient(1200px 700px at 82% -8%, rgba(82,144,212,.08), transparent 60%),
+      radial-gradient(900px 620px at 6% 2%, rgba(93,208,216,.055), transparent 58%),
+      var(--ink);
+    overflow-x:hidden;
+  }
+  body:before{
+    content:"";
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(1400px 900px at 50% 0%, #000 30%, transparent 92%);
+  }
+  a{color:inherit}
+  ::selection{background:rgba(93,208,216,.28);color:#fff}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding-inline:var(--pad);position:relative;z-index:1}
+
+  .orbital{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+    opacity:.52;
+  }
+
+  .topbar{
+    position:sticky;
+    top:0;
+    z-index:50;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(var(--ink), rgba(10,13,19,.72));
+    backdrop-filter:blur(10px);
+  }
+  .topbar__in{
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:11px var(--pad);
+    display:flex;
+    align-items:center;
+    gap:18px;
+  }
+  .ysig{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    min-height:28px;
+    padding:4px 10px 4px 6px;
+    border:1px solid rgba(93,208,216,.20);
+    border-radius:999px;
+    background:linear-gradient(90deg, rgba(93,208,216,.10), rgba(82,144,212,.04));
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-decoration:none;
+  }
+  .ysig__mark{width:34px;height:18px;display:inline-flex;align-items:center;justify-content:center;gap:2px}
+  .ysig__mark i{
+    display:block;
+    width:3px;
+    border-radius:999px;
+    background:linear-gradient(180deg, rgba(93,208,216,.95), rgba(82,144,212,.86));
+    box-shadow:0 0 10px rgba(93,208,216,.20);
+    animation:barBeat 1.7s ease-in-out infinite;
+  }
+  .ysig__mark i:nth-child(2){animation-delay:.12s}
+  .ysig__mark i:nth-child(3){animation-delay:.24s}
+  .ysig__mark i:nth-child(4){animation-delay:.36s}
+  .ysig__mark i:nth-child(5){animation-delay:.48s}
+  .ysig__mark i:nth-child(6){animation-delay:.6s}
+  .ysig__mark i:nth-child(1){height:6px;opacity:.65}
+  .ysig__mark i:nth-child(2){height:12px;opacity:.82}
+  .ysig__mark i:nth-child(3){height:18px}
+  .ysig__mark i:nth-child(4){height:10px;opacity:.78}
+  .ysig__mark i:nth-child(5){height:15px;opacity:.92}
+  .ysig__mark i:nth-child(6){height:7px;opacity:.68}
+  .brand{display:flex;align-items:center;gap:10px;margin-right:auto;text-decoration:none;min-width:0}
+  .brand__logo{width:28px;height:28px;filter:drop-shadow(0 0 12px rgba(93,208,216,.22))}
+  .brand__name{font-family:var(--mono);font-size:15px;font-weight:700;white-space:nowrap}
+  .brand__name b{color:var(--accent)}
+  .brand__v{font-family:var(--mono);font-size:11px;color:var(--muted-2);border:1px solid var(--line-2);border-radius:999px;padding:1px 8px;white-space:nowrap}
+  .nav{display:flex;gap:4px}
+  .nav a{
+    padding:6px 10px;
+    border-radius:7px;
+    color:var(--muted);
+    font-family:var(--mono);
+    font-size:12px;
+    text-decoration:none;
+    transition:color .15s, background .15s;
+  }
+  .nav a:hover{color:var(--text);background:var(--ink-3)}
+  .langswitch{
+    width:68px;
+    height:28px;
+    border:1px solid var(--line-2);
+    border-radius:999px;
+    background:rgba(15,19,27,.86);
+    color:var(--muted);
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.05em;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    align-items:center;
+    position:relative;
+    padding:0;
+    cursor:pointer;
+    outline:0;
+    flex:0 0 auto;
+  }
+  .langswitch:focus-visible{box-shadow:0 0 0 2px rgba(93,208,216,.26);border-color:rgba(93,208,216,.72)}
+  .langswitch:before{
+    content:"";
+    position:absolute;
+    top:3px;
+    left:3px;
+    width:30px;
+    height:20px;
+    border-radius:999px;
+    background:rgba(93,208,216,.18);
+    border:1px solid rgba(93,208,216,.62);
+    transition:transform .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .langswitch span{position:relative;z-index:1;text-align:center}
+  body.lang-en .langswitch:before{transform:translateX(30px)}
+  body.lang-en .langswitch .en,
+  body:not(.lang-en) .langswitch .ko{color:var(--text)}
+  body.lang-en h1{max-width:720px}
+  .gh{
+    height:30px;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:0 14px;
+    border:1px solid rgba(93,208,196,.55);
+    border-radius:999px;
+    background:linear-gradient(180deg, rgba(93,208,216,.22), rgba(82,144,212,.14));
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:700;
+    text-decoration:none;
+    white-space:nowrap;
+  }
+  .gh:hover{border-color:var(--wave);background:linear-gradient(180deg, rgba(93,208,216,.34), rgba(82,144,212,.22))}
+
+  .rail{
+    position:fixed;
+    right:18px;
+    top:50%;
+    transform:translateY(-50%);
+    z-index:35;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:12px 8px;
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(10,13,19,.56);
+    backdrop-filter:blur(10px);
+  }
+  .rail__thumb{
+    position:absolute;
+    left:50%;
+    top:12px;
+    width:18px;
+    height:18px;
+    border-radius:999px;
+    transform:translateX(-50%) translateY(var(--rail-y,0px));
+    border:1px solid rgba(93,208,216,.78);
+    background:rgba(93,208,216,.18);
+    box-shadow:0 0 18px rgba(93,208,216,.24);
+    transition:transform .34s cubic-bezier(.2,.8,.2,1);
+  }
+  .rail a{
+    width:18px;
+    height:18px;
+    display:grid;
+    place-items:center;
+    position:relative;
+    text-decoration:none;
+    z-index:1;
+  }
+  .rail a:before{content:"";width:5px;height:5px;border-radius:999px;background:var(--muted-2);transition:background .18s, transform .18s}
+  .rail a.active:before,.rail a:hover:before{background:var(--wave);transform:scale(1.35)}
+  .rail a:after{
+    content:attr(data-label);
+    position:absolute;
+    right:28px;
+    top:50%;
+    transform:translateY(-50%);
+    white-space:nowrap;
+    opacity:0;
+    pointer-events:none;
+    padding:3px 8px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:rgba(10,13,19,.86);
+    color:var(--text);
+    font-size:12px;
+    transition:opacity .15s, right .15s;
+  }
+  .rail a:hover:after,.rail a.active:after{opacity:1;right:31px}
+
+  .hero{min-height:calc(100vh - 52px);display:flex;align-items:center;padding:56px 0 28px}
+  .hero__grid{display:grid;grid-template-columns:minmax(370px,.86fr) minmax(560px,1.34fr);gap:clamp(28px,4vw,70px);align-items:center;width:100%}
+  .kicker{
+    display:inline-flex;
+    gap:8px;
+    align-items:center;
+    color:var(--wave);
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+  }
+  .kicker:before{content:"";width:34px;height:1px;background:var(--wave);opacity:.7}
+  h1{
+    margin:18px 0 18px;
+    max-width:760px;
+    color:#f1f6fb;
+    font-size:clamp(2.1rem,4.3vw,4.35rem);
+    line-height:1.04;
+    font-weight:760;
+    letter-spacing:0;
+    word-break:keep-all;
+  }
+  h1 .hl{color:var(--accent)}
+  h1 .hl2{color:var(--wave)}
+  .hero__sub{max-width:650px;margin:0 0 26px;color:#aebccd;font-size:clamp(1rem,1.25vw,1.18rem);line-height:1.75}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin:30px 0 26px}
+  .btn{
+    min-height:40px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:0 17px;
+    border-radius:999px;
+    border:1px solid var(--line-2);
+    background:rgba(20,25,34,.78);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:12px;
+    font-weight:700;
+    text-decoration:none;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .btn--primary{border-color:rgba(93,208,216,.62);background:linear-gradient(180deg, rgba(93,208,216,.24), rgba(82,144,212,.16))}
+  .btn:hover{border-color:var(--wave);transform:translateY(-1px)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{
+    border:1px solid var(--line);
+    border-radius:999px;
+    background:rgba(20,25,34,.55);
+    color:var(--muted);
+    padding:4px 10px;
+    font-family:var(--mono);
+    font-size:12px;
+  }
+
+  .hero__visual{position:relative}
+  .product-logo{
+    position:absolute;
+    right:clamp(12px,2vw,28px);
+    top:-32px;
+    z-index:3;
+    width:78px;
+    height:78px;
+    border:1px solid rgba(93,208,216,.24);
+    border-radius:14px;
+    background:rgba(10,13,19,.76);
+    padding:10px;
+    box-shadow:0 26px 60px -32px #000, 0 0 34px rgba(93,208,216,.15);
+    animation:logoFloat 5.4s ease-in-out infinite;
+  }
+  .product-logo img{display:block;width:100%;height:100%}
+  .appframe{
+    position:relative;
+    border:1px solid var(--line-2);
+    border-radius:14px;
+    background:linear-gradient(180deg, rgba(28,35,49,.92), rgba(15,19,27,.94));
+    box-shadow:0 38px 90px -52px #000, inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:hidden;
+  }
+  .appframe:before{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    top:45px;
+    height:140px;
+    z-index:2;
+    pointer-events:none;
+    background:linear-gradient(180deg, transparent, rgba(93,208,216,.13), transparent);
+    mix-blend-mode:screen;
+    animation:scanSweep 5.2s linear infinite;
+  }
+  .appframe__bar{height:45px;display:flex;align-items:center;gap:10px;padding:0 15px;border-bottom:1px solid var(--line);background:rgba(28,35,49,.76)}
+  .panel__bar{display:flex;align-items:center;gap:14px;padding:9px 14px;flex-wrap:wrap;row-gap:3px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted-2)}
+  .panel__bar .seg{display:flex;align-items:center;gap:7px}
+  .panel__bar .tick{width:7px;height:7px;border-radius:2px}
+  .panel__bar .tick.a{background:var(--accent)}
+  .panel__bar .tick.b{background:var(--wave)}
+  .panel__bar .tick.e{background:var(--err)}
+  .panel__bar .spacer{margin-left:auto}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted-2)}
+  .dot:nth-child(1){background:var(--err)}
+  .dot:nth-child(2){background:var(--warn)}
+  .dot:nth-child(3){background:var(--ok)}
+  .appframe__title{margin-left:8px;color:var(--muted);font-family:var(--mono);font-size:12px}
+  .mock{display:grid;grid-template-columns:220px 1fr;min-height:510px}
+  .sidepanel{border-right:1px solid var(--line);background:rgba(15,19,27,.74);padding:16px}
+  .sidepanel h3,.mainpanel h3{margin:0 0 12px;color:var(--muted);font-family:var(--mono);font-size:12px;font-weight:700}
+  .tree{display:grid;gap:8px}
+  .tree div{height:27px;border:1px solid var(--line);background:rgba(28,35,49,.72);font-family:var(--mono);font-size:11px;color:var(--muted);padding:4px 8px;position:relative;overflow:hidden}
+  .tree div:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg, transparent, rgba(93,208,216,.14), transparent);transform:translateX(-110%);animation:rowShine 4s ease-in-out infinite}
+  .tree .err{color:var(--err);border-color:rgba(239,107,107,.3)}
+  .tree .warn{color:var(--warn);border-color:rgba(216,180,88,.3)}
+  .mainpanel{padding:16px;background:rgba(10,13,19,.38)}
+  .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .pill{height:28px;border:1px solid var(--line);background:rgba(28,35,49,.8);color:var(--muted);font-family:var(--mono);font-size:11px;padding:5px 10px}
+  .rows{display:grid;gap:7px}
+  .row{display:grid;grid-template-columns:1.1fr .72fr .84fr .56fr;gap:8px;align-items:center;height:34px;border:1px solid var(--line);background:rgba(20,25,34,.72);padding:0 8px;font-family:var(--mono);font-size:11px;color:var(--muted);animation:rowPulse 6s ease-in-out infinite}
+  .row:nth-child(2){animation-delay:.6s}
+  .row:nth-child(3){animation-delay:1.2s}
+  .row:nth-child(4){animation-delay:1.8s}
+  .row.err{color:var(--err)}
+  .row.warn{color:var(--warn)}
+  .flow{margin-top:22px;display:flex;align-items:center;gap:8px;overflow:hidden}
+  .node{min-width:104px;padding:9px 10px;border:1px solid var(--line-2);background:rgba(28,35,49,.9);font-family:var(--mono);font-size:11px;color:var(--text);position:relative}
+  .node strong{display:block;color:var(--wave);font-size:10px}
+  .node:before{content:"";position:absolute;left:-2px;top:50%;width:4px;height:4px;border-radius:50%;background:var(--wave);box-shadow:0 0 13px var(--wave);animation:nodePing 2.8s ease-in-out infinite}
+  .node:nth-of-type(2):before{animation-delay:.35s}
+  .node:nth-of-type(3):before{animation-delay:.7s}
+  .node:nth-of-type(4):before{animation-delay:1.05s}
+  .arrow{color:var(--muted-2);animation:arrowPulse 2.8s ease-in-out infinite}
+  .miniheat{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px}
+  .miniheat__label{grid-column:1/-1;color:var(--muted-2);font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase}
+  .miniheat span:not(.miniheat__label){min-height:42px;border:1px solid var(--line);border-radius:8px;background:rgba(20,25,34,.72);padding:7px 8px;font-family:var(--mono);font-size:10.5px;color:var(--muted);animation:heatBlink 5s ease-in-out infinite}
+  .miniheat b{display:block;color:var(--text);font-size:11px}
+  .miniheat .ok{border-color:rgba(98,199,125,.35);background:rgba(98,199,125,.08)}
+  .miniheat .warn{border-color:rgba(216,180,88,.36);background:rgba(216,180,88,.09);animation-delay:.8s}
+  .miniheat .amber{border-color:rgba(200,152,64,.42);background:rgba(200,152,64,.1);animation-delay:1.4s}
+  .miniheat .err{border-color:rgba(239,107,107,.42);background:rgba(239,107,107,.1);animation-delay:2s}
+  .glowline{height:2px;background:linear-gradient(90deg, transparent, var(--wave), transparent);opacity:.5;animation:glowTravel 3.4s ease-in-out infinite}
+
+  section{padding:82px 0;border-top:1px solid var(--line)}
+  .section__head{max-width:940px;margin-bottom:38px}
+  .eyebrow{margin:0 0 6px;color:var(--wave);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+  h2{margin:0;color:#eff5fa;font-size:clamp(1.8rem,3vw,3rem);line-height:1.08;font-weight:740;letter-spacing:0;word-break:keep-all}
+  .lead{max-width:760px;margin:0;color:var(--muted);font-size:1rem}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .card{
+    border:1px solid var(--line);
+    border-radius:12px;
+    background:var(--ink-1);
+    padding:22px;
+    min-height:206px;
+    transition:border-color .2s, transform .2s, background .2s;
+  }
+  .card:hover{transform:translateY(-3px);border-color:rgba(93,208,216,.34);background:linear-gradient(180deg, rgba(28,35,49,.86), rgba(15,19,27,.82))}
+  .card__num{color:var(--wave);font-family:var(--mono);font-size:12px;font-weight:700}
+  .card h3{margin:10px 0 8px;color:var(--text);font-size:1.1rem;line-height:1.25}
+  .card p{margin:0;color:var(--muted);font-size:.96rem}
+  .wide{display:grid;grid-template-columns:1.02fr .98fr;gap:14px;align-items:stretch}
+  .panel{border:1px solid var(--line-2);border-radius:14px;background:linear-gradient(180deg,var(--ink-2),var(--ink-1));padding:20px;position:relative;overflow:hidden;box-shadow:0 30px 80px -40px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03)}
+  .panel:before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, rgba(93,208,216,.7), transparent);opacity:.55}
+  .panel h3{margin:0 0 12px;font-family:var(--mono);font-size:13px;color:var(--wave)}
+  .rules{display:grid;gap:10px}
+  .rule{display:grid;grid-template-columns:1fr 36px 1fr;gap:8px;align-items:center}
+  .field{min-height:38px;border:1px solid var(--line);border-radius:8px;background:rgba(10,13,19,.54);padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--text)}
+  .plus{height:38px;display:grid;place-items:center;border:1px solid rgba(93,208,216,.35);border-radius:8px;color:var(--wave);font-family:var(--mono)}
+  .legend{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .legend span{border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .legend b{display:block;font-size:13px}
+  .legend .ok b{color:var(--ok)}
+  .legend .warn b{color:var(--warn)}
+  .legend .amber b{color:var(--amber)}
+  .legend .err b{color:var(--err)}
+  .heat{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .cell{min-height:76px;border:1px solid var(--line);border-radius:11px;background:rgba(20,25,34,.7);padding:10px;font-family:var(--mono);position:relative;overflow:hidden;transition:transform .2s}
+  .cell:hover{transform:translateY(-2px)}
+  .cell:after{content:"";position:absolute;inset:auto 0 0 0;height:2px;background:currentColor;opacity:.55;transform:scaleX(.2);transform-origin:left;animation:meter 4.8s ease-in-out infinite}
+  .cell b{display:block;font-size:12px;color:var(--text)}
+  .cell span{color:var(--muted-2);font-size:11px}
+  .cell.ok{color:var(--ok);border-color:rgba(98,199,125,.35);background:rgba(98,199,125,.075)}
+  .cell.warn{color:var(--warn);border-color:rgba(216,180,88,.36);background:rgba(216,180,88,.09)}
+  .cell.amber{color:var(--amber);border-color:rgba(200,152,64,.42);background:rgba(200,152,64,.1)}
+  .cell.err{color:var(--err);border-color:rgba(239,107,107,.42);background:rgba(239,107,107,.1)}
+  .install{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;counter-reset:step}
+  .step{position:relative;border:1px solid var(--line);border-radius:11px;background:rgba(15,19,27,.74);padding:18px;min-height:170px}
+  .step:before{counter-increment:step;content:counter(step, decimal-leading-zero);display:block;margin-bottom:18px;color:var(--wave);font-family:var(--mono);font-size:12px;font-weight:700}
+  .step h3{margin:0 0 8px;font-size:1rem}
+  .step p{margin:0;color:var(--muted);font-size:.94rem}
+  code{font-family:var(--mono);color:#cfe9ff;background:rgba(82,144,212,.12);border:1px solid rgba(82,144,212,.20);padding:1px 5px}
+  .footer{padding:34px 0;color:var(--muted-2);font-family:var(--mono);font-size:12px;border-top:1px solid var(--line)}
+
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .65s ease, transform .65s ease}
+  .reveal.in{opacity:1;transform:none}
+
+  @keyframes barBeat{0%,100%{transform:scaleY(.72)}45%{transform:scaleY(1.12)}}
+  @keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes scanSweep{0%{transform:translateY(-150px)}100%{transform:translateY(520px)}}
+  @keyframes rowShine{0%,55%{transform:translateX(-110%)}85%,100%{transform:translateX(110%)}}
+  @keyframes rowPulse{0%,100%{border-color:var(--line)}50%{border-color:rgba(93,208,216,.25)}}
+  @keyframes nodePing{0%,100%{opacity:.2;transform:translateY(-50%) scale(.7)}45%{opacity:1;transform:translateY(-50%) scale(1.25)}}
+  @keyframes arrowPulse{0%,100%{opacity:.35}50%{opacity:1;color:var(--wave)}}
+  @keyframes heatBlink{0%,100%{filter:saturate(1)}50%{filter:saturate(1.35) brightness(1.08)}}
+  @keyframes glowTravel{0%,100%{opacity:.22}50%{opacity:.75}}
+  @keyframes meter{0%,100%{transform:scaleX(.25)}45%,60%{transform:scaleX(.88)}}
+
+  @media (max-width:1100px){
+    .nav{display:none}
+    .hero{min-height:auto}
+    .hero__grid,.wide{grid-template-columns:1fr}
+    .cards,.install{grid-template-columns:repeat(2,1fr)}
+    .rail{display:none}
+  }
+  @media (max-width:720px){
+    .topbar__in{gap:10px}
+    .ysig{display:none}
+    .brand__v{display:none}
+    .langswitch{width:62px;height:26px;margin-left:auto}
+    .langswitch:before{width:27px;height:18px}
+    body.lang-en .langswitch:before{transform:translateX(27px)}
+    .hero{padding-top:40px}
+    .cards,.install,.legend,.heat{grid-template-columns:1fr}
+    .mock{grid-template-columns:1fr}
+    .sidepanel{border-right:0;border-bottom:1px solid var(--line)}
+    .row{grid-template-columns:1fr 1fr;height:auto;min-height:42px}
+    .flow{overflow-x:auto;padding-bottom:4px}
+    .gh{padding:0 11px}
+    .product-logo{width:62px;height:62px;top:-22px}
+    section{padding:62px 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *,*:before,*:after{animation:none!important;transition:none!important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+<canvas class="orbital" id="orbital" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="topbar__in">
+    <a class="ysig" href="#top" aria-label="YSG audio tools">
+      <span class="ysig__mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+      <span>YSG<span style="color:var(--wave)">.TOOLS</span></span>
+    </a>
+    <a class="brand" href="#top">
+      <img class="brand__logo" src="assets/bus-routing-auditor-logo.svg" alt="" aria-hidden="true">
+      <span class="brand__name">Bus Routing <b>Auditor</b></span>
+      <span class="brand__v">V.2.0.0</span>
+    </a>
+    <nav class="nav" aria-label="페이지 섹션">
+      <a href="#audit" data-en="Audit">감사</a>
+      <a href="#signal" data-en="Signal">시그널</a>
+      <a href="#heatmap" data-en="Heatmap">히트맵</a>
+      <a href="#install" data-en="Install">설치</a>
+    </nav>
+    <button class="langswitch" type="button" aria-label="언어 전환" aria-pressed="false">
+      <span class="ko">KO</span><span class="en">EN</span>
+    </button>
+    <a class="gh" href="https://github.com/samter96/Wwise-Bus-Routing-Auditor" target="_blank" rel="noreferrer"><span data-en="Repository">저장소</span> ↗</a>
+  </div>
+</header>
+
+<nav class="rail" aria-label="빠른 이동">
+  <span class="rail__thumb" aria-hidden="true"></span>
+  <a href="#top" data-label="인트로" data-en-label="Intro"></a>
+  <a href="#audit" data-label="감사" data-en-label="Audit"></a>
+  <a href="#signal" data-label="시그널 플로우" data-en-label="Signal Flow"></a>
+  <a href="#heatmap" data-label="히트맵" data-en-label="Heatmap"></a>
+  <a href="#install" data-label="설치" data-en-label="Install"></a>
+</nav>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero__grid">
+      <div>
+        <div class="kicker" data-en="WAAPI Routing Inspection">WAAPI Routing Inspection</div>
+        <h1 data-en="Audit Wwise <span class=&quot;hl&quot;>bus routing</span><br>and trace every <span class=&quot;hl2&quot;>signal path</span>">Wwise <span class="hl">버스 라우팅</span>을 한 번에 점검하고 <span class="hl2">흐름으로 추적</span></h1>
+        <p class="hero__sub" data-en="Scan every Sound object in the project and judge the expected bus from asset names and Work Unit paths. Violations, Signal Flow, and bus Heatmap stay connected so misplaced routing can be found and fixed quickly.">
+          프로젝트 전체 Sound 오브젝트를 스캔해 에셋 이름과 Work Unit 경로 기준으로 예상 버스를 판정합니다.
+          위반 목록, Signal Flow, 버스별 Heatmap을 한 화면 흐름으로 연결해 잘못 라우팅된 사운드를 빠르게 찾고 수정할 수 있습니다.
+        </p>
+        <div class="actions">
+          <a class="btn btn--primary" href="https://github.com/samter96/Wwise-Bus-Routing-Auditor" target="_blank" rel="noreferrer" data-en="Open Repository">Repository 열기</a>
+          <a class="btn" href="#install" data-en="Install">설치 방법</a>
+          <a class="btn" href="#audit" data-en="Features">기능 보기</a>
+        </div>
+        <div class="chips">
+          <span class="chip">Python 3.10+</span>
+          <span class="chip">Wwise 2023 / 2024 / 2025</span>
+          <span class="chip">WAAPI 8080</span>
+          <span class="chip">CSV Export</span>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="product-logo"><img src="assets/bus-routing-auditor-logo.svg" alt="Bus Routing Auditor logo"></div>
+        <div class="appframe">
+          <div class="appframe__bar">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="appframe__title">Bus Routing Auditor — Wwise · V.2.0.0</span>
+          </div>
+          <div class="mock" aria-label="Bus Routing Auditor animated product preview">
+            <aside class="sidepanel">
+              <h3 data-en="Violations by Bus">버스별 위반</h3>
+              <div class="tree">
+                <div>Master Audio Bus</div>
+                <div class="warn">└ SFX · descendants</div>
+                <div class="err">  ├ UI_Bus · 12</div>
+                <div>  ├ Music · clean</div>
+                <div class="warn">  └ Ambience · 4</div>
+                <div class="err">    └ VO_Sub · 7</div>
+              </div>
+            </aside>
+            <div class="mainpanel">
+              <h3 data-en="Keyword / Search · Work Unit">키워드 / 검색 · Work Unit</h3>
+              <div class="toolbar">
+                <span class="pill">UI → UI</span>
+                <span class="pill">AMB → AMB</span>
+                <span class="pill">VO → VO</span>
+                <span class="pill">Inherited + Overridden</span>
+              </div>
+              <div class="rows">
+                <div class="row err"><span>UI_Click_Confirm</span><span>UI_Main</span><span>SFX_Bus</span><span>UI</span></div>
+                <div class="row warn"><span>AMB_Wind_Loop</span><span>Ambiance</span><span>Inherited</span><span>AMB</span></div>
+                <div class="row err"><span>VO_NPC_Greet</span><span>VO_Main</span><span>NPC_Bus</span><span>VO</span></div>
+                <div class="row"><span>Music_Battle_A</span><span>Music</span><span>Music_Bus</span><span>Music</span></div>
+              </div>
+              <div class="flow">
+                <div class="node"><strong>Sound</strong>UI_Click</div>
+                <span class="arrow">→</span>
+                <div class="node"><strong>Container</strong>Buttons</div>
+                <span class="arrow">→</span>
+                <div class="node"><strong>Current</strong>SFX_Bus</div>
+                <span class="arrow">→</span>
+                <div class="node"><strong>Expected</strong>UI_Bus</div>
+              </div>
+              <div class="miniheat" aria-label="Bus heatmap summary preview">
+                <span class="miniheat__label" data-en="Bus Heatmap Preview">버스 히트맵 요약</span>
+                <span class="ok"><b>0%</b>clean</span>
+                <span class="warn"><b>8%</b>low</span>
+                <span class="amber"><b>21%</b>mid</span>
+                <span class="err"><b>39%</b>high</span>
+              </div>
+            </div>
+          </div>
+          <div class="glowline"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="audit">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow" data-en="Two Scan Modes">Two Scan Modes</p>
+          <h2 data-en="Separate asset-name checks from Work Unit checks">이름 기준과 Work Unit 기준을 분리해서 검사</h2>
+        </div>
+        <p class="lead" data-en="The tool distinguishes a sound whose file name says UI but is routed to SFX from a sound that lives under a UI Work Unit but has drifted to the wrong bus.">
+          같은 Sound라도 “파일명은 UI인데 버스는 SFX”인 경우와 “UI Work Unit에 있는데 버스가 어긋난” 경우를 따로 볼 수 있습니다.
+        </p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <div class="card__num">SCAN 01</div>
+          <h3 data-en="Asset-name keyword scan">에셋 이름 키워드 검사</h3>
+          <p data-en="Checks whether the current OutputBus name contains the expected keyword when a Sound name contains the matching token.">Sound 이름에 포함된 토큰을 기준으로 현재 OutputBus 이름이 기대 키워드를 포함하는지 확인합니다.</p>
+        </article>
+        <article class="card">
+          <div class="card__num">SCAN 02</div>
+          <h3 data-en="Work Unit / path scan">Work Unit / 경로 검사</h3>
+          <p data-en="Finds routing violations from the owning Work Unit name, full Work Unit path, and parent hierarchy path.">Sound가 속한 Work Unit 이름, Work Unit 전체 경로, 상위 경로를 기준으로 라우팅 위반을 찾습니다.</p>
+        </article>
+        <article class="card">
+          <div class="card__num">ACTION</div>
+          <h3 data-en="Bulk reroute selected items">선택 항목 일괄 재라우팅</h3>
+          <p data-en="Change OutputBus for selected violating Sounds in bulk, then export the result list as CSV.">위반 목록에서 선택한 Sound들의 OutputBus를 지정 버스로 한 번에 변경하고, 결과는 CSV로 내보낼 수 있습니다.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="signal">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow" data-en="Rule Builder">Rule Builder</p>
+          <h2 data-en="Simple rules, flexible OR conditions">룰은 간단하게, 예외는 OR 조건으로</h2>
+        </div>
+        <p class="lead" data-en="Save baseline keywords such as UI, Music, AMB, and VO as rules. When one Sound matches several rules, it passes as soon as one expected bus keyword is satisfied.">
+          UI, Music, AMB, VO 같은 기준 키워드를 룰로 저장하고, 하나의 Sound가 여러 룰에 걸리는 경우에는 하나라도 만족하면 통과하도록 판정합니다.
+        </p>
+      </div>
+      <div class="wide">
+        <div class="panel">
+          <h3>Keyword Rules</h3>
+          <div class="rules">
+            <div class="rule"><div class="field">Asset Name Keyword · UI</div><div class="plus">→</div><div class="field">Bus Name Keyword · UI</div></div>
+            <div class="rule"><div class="field">Work Unit Keyword · Music</div><div class="plus">→</div><div class="field">Bus Name Keyword · Music</div></div>
+            <div class="rule"><div class="field">Work Unit Keyword · Ambiance</div><div class="plus">+</div><div class="field">Bus Keyword · AMB or Ambisonics</div></div>
+          </div>
+          <div class="legend">
+            <span class="ok"><b>0%</b>위반 없음</span>
+            <span class="warn"><b>&lt;15%</b>주의</span>
+            <span class="amber"><b>15-35%</b>점검 필요</span>
+            <span class="err"><b>35%+</b>즉시 확인</span>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Signal Flow</h3>
+          <p class="lead" style="margin-bottom:18px" data-en="Selecting a violating Sound reveals the routing decision path from Sound to container, Work Unit, current bus, and expected bus.">
+            위반 Sound를 선택하면 Sound에서 컨테이너, Work Unit, 현재 버스, 기대 버스까지 이어지는 라우팅 결정 지점을 시각적으로 확인할 수 있습니다.
+          </p>
+          <div class="flow">
+            <div class="node"><strong>Sound</strong>NPC_UI_Open</div>
+            <span class="arrow">→</span>
+            <div class="node"><strong>Parent</strong>HUD</div>
+            <span class="arrow">→</span>
+            <div class="node"><strong>Work Unit</strong>UI_Main</div>
+            <span class="arrow">→</span>
+            <div class="node"><strong>Bus</strong>Master</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="heatmap">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow" data-en="Bus Heatmap">Bus Heatmap</p>
+          <h2 data-en="See violation density by bus at a glance">버스별 위반 밀도를 한눈에 보기</h2>
+        </div>
+        <p class="lead" data-en="Every bus is laid out in project hierarchy order, and each cell is colored by the ratio of directly routed Sounds that were detected as violations.">
+          프로젝트 전체 버스를 계층 순서로 펼치고, 각 버스에 직접 라우팅된 Sound 중 위반으로 감지된 비율을 색상으로 표시합니다.
+        </p>
+      </div>
+      <div class="heat">
+        <div class="cell ok"><b>UI_Bus</b><span>0 / 138 · clean</span></div>
+        <div class="cell warn"><b>Ambience</b><span>4 / 82 · 4.8%</span></div>
+        <div class="cell amber"><b>VO_Sub</b><span>18 / 96 · 18.7%</span></div>
+        <div class="cell err"><b>SFX_Default</b><span>41 / 103 · 39.8%</span></div>
+        <div class="cell ok"><b>Music</b><span>0 / 44 · clean</span></div>
+        <div class="cell warn"><b>Foley</b><span>3 / 37 · 8.1%</span></div>
+        <div class="cell amber"><b>NPC</b><span>12 / 62 · 19.3%</span></div>
+        <div class="cell err"><b>Master Audio Bus</b><span>22 / 51 · 43.1%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal" id="install">
+    <div class="wrap">
+      <div class="section__head">
+        <div>
+          <p class="eyebrow" data-en="Install">Install</p>
+          <h2 data-en="Launch directly from the Wwise Tools menu">Wwise Tools 메뉴에서 바로 실행</h2>
+        </div>
+        <p class="lead" data-en="After installation, run <code>Tools > Bus Routing Auditor</code> inside Wwise. Enable WAAPI in <code>Project > User Preferences > Enable Wwise Authoring API</code> first.">
+          설치 후 Wwise에서 <code>Tools > Bus Routing Auditor</code>를 실행합니다. WAAPI는 <code>Project > User Preferences > Enable Wwise Authoring API</code>에서 켜야 합니다.
+        </p>
+      </div>
+      <div class="install">
+        <article class="step">
+          <h3 data-en="Get the repository">저장소 받기</h3>
+          <p data-en="Download the project with <code>git clone</code> or GitHub's Download ZIP."><code>git clone</code> 또는 GitHub의 Download ZIP으로 프로젝트를 내려받습니다.</p>
+        </article>
+        <article class="step">
+          <h3 data-en="Install packages">패키지 설치</h3>
+          <p data-en="Run <code>install.bat</code> to prepare the virtual environment and <code>waapi-client</code>."><code>install.bat</code>을 실행해 가상환경과 <code>waapi-client</code>를 준비합니다.</p>
+        </article>
+        <article class="step">
+          <h3 data-en="Register Wwise Add-on">Wwise Add-on 등록</h3>
+          <p data-en="Run <code>install_addon.bat</code> to create the Wwise Commands Add-on JSON."><code>install_addon.bat</code>을 실행하면 Wwise Commands Add-on JSON이 생성됩니다.</p>
+        </article>
+        <article class="step">
+          <h3 data-en="Run the tool">툴 실행</h3>
+          <p data-en="Restart Wwise or reload Command Add-ons, then launch it from the Tools menu.">Wwise를 재시작하거나 Command Add-ons를 Reload한 뒤 Tools 메뉴에서 실행합니다.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">Wwise Bus Routing Auditor · WAAPI based routing audit utility · Created for sound pipeline QA</div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var reveals = document.querySelectorAll('.reveal');
+  if(reduce || !('IntersectionObserver' in window)){
+    reveals.forEach(function(el){ el.classList.add('in'); });
+  }else{
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, {threshold:.14});
+    reveals.forEach(function(el){ io.observe(el); });
+  }
+
+  var rail = document.querySelector('.rail');
+  var links = rail ? Array.prototype.slice.call(rail.querySelectorAll('a')) : [];
+  var sections = links.map(function(a){
+    var id = a.getAttribute('href');
+    return document.querySelector(id === '#top' ? 'main' : id);
+  });
+  function updateRail(){
+    if(!rail || !links.length) return;
+    var mid = window.scrollY + window.innerHeight * .46;
+    var active = 0;
+    sections.forEach(function(sec, i){
+      if(sec && sec.offsetTop <= mid) active = i;
+    });
+    links.forEach(function(a, i){ a.classList.toggle('active', i === active); });
+    rail.style.setProperty('--rail-y', (active * 28) + 'px');
+  }
+  window.addEventListener('scroll', updateRail, {passive:true});
+  window.addEventListener('resize', updateRail);
+  updateRail();
+
+  var langBtn = document.querySelector('.langswitch');
+  var isEN = false;
+  var originalHTML = new WeakMap();
+  var originalLabel = new WeakMap();
+
+  function applyLang(en){
+    document.querySelectorAll('[data-en]').forEach(function(el){
+      if(!originalHTML.has(el)) originalHTML.set(el, el.innerHTML);
+      el.innerHTML = en ? el.getAttribute('data-en') : originalHTML.get(el);
+    });
+    document.querySelectorAll('[data-en-label]').forEach(function(el){
+      if(!originalLabel.has(el)) originalLabel.set(el, el.getAttribute('data-label') || '');
+      el.setAttribute('data-label', en ? el.getAttribute('data-en-label') : originalLabel.get(el));
+    });
+    document.body.classList.toggle('lang-en', en);
+    document.documentElement.setAttribute('lang', en ? 'en' : 'ko');
+    if(langBtn) langBtn.setAttribute('aria-pressed', en ? 'true' : 'false');
+    updateRail();
+  }
+
+  if(langBtn){
+    langBtn.addEventListener('click', function(){
+      isEN = !isEN;
+      applyLang(isEN);
+    });
+  }
+
+  if(reduce) return;
+  var canvas = document.getElementById('orbital');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var w = 0, h = 0, dots = [];
+  function resize(){
+    w = canvas.width = Math.floor(window.innerWidth * dpr);
+    h = canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    dots = [];
+    var count = Math.min(72, Math.max(34, Math.floor(window.innerWidth / 22)));
+    for(var i=0;i<count;i++){
+      dots.push({
+        x:Math.random()*w,
+        y:Math.random()*h,
+        vx:(Math.random()-.5)*.18*dpr,
+        vy:(Math.random()-.5)*.18*dpr,
+        r:(Math.random()*1.6+0.8)*dpr
+      });
+    }
+  }
+  function tick(){
+    ctx.clearRect(0,0,w,h);
+    for(var i=0;i<dots.length;i++){
+      var p = dots[i];
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > w) p.vx *= -1;
+      if(p.y < 0 || p.y > h) p.vy *= -1;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle = 'rgba(93,208,216,.18)';
+      ctx.fill();
+      for(var j=i+1;j<dots.length;j++){
+        var q = dots[j], dx = p.x-q.x, dy = p.y-q.y, dist = Math.sqrt(dx*dx+dy*dy);
+        if(dist < 145*dpr){
+          ctx.globalAlpha = (1 - dist/(145*dpr)) * .16;
+          ctx.strokeStyle = '#5dd0d8';
+          ctx.lineWidth = 1*dpr;
+          ctx.beginPath();
+          ctx.moveTo(p.x,p.y);
+          ctx.lineTo(q.x,q.y);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
