@@ -1,5 +1,5 @@
 # Wwise Bus Routing Auditor
-<img width="1490" height="1003" alt="image" src="https://github.com/user-attachments/assets/db1e4cc7-0c6d-4c69-84d0-b6ef66e57f2b" />
+![Bus Routing Auditor Tauri UI](assets/screenshot-tauri-v2.png)
 
 Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검수 툴입니다.  
 프로젝트 전체 Sound 오브젝트를 스캔하여 **에셋 이름** 또는 **Work Unit / 계층 경로** 기준으로  
@@ -47,8 +47,7 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 
 설치 파일만 필요한 경우 GitHub Releases에서 최신 `Bus.Routing.Auditor_2.0.1_x64-setup.exe` 를 다운로드해 실행합니다.
 
-- Primary: [samter96/Wwise-Bus-Routing-Auditor Releases](https://github.com/samter96/Wwise-Bus-Routing-Auditor/releases/latest)
-- Mirror: [SeunggyunYou/Wwise-Bus-Routing-Auditor Releases](https://github.com/SeunggyunYou/Wwise-Bus-Routing-Auditor/releases/latest)
+- [samter96/Wwise-Bus-Routing-Auditor Releases](https://github.com/samter96/Wwise-Bus-Routing-Auditor/releases/latest)
 
 설치 후 Wwise에서 **Tools → Bus Routing Auditor** 로 실행합니다.
 
@@ -56,12 +55,6 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 
 ```bash
 git clone https://github.com/samter96/Wwise-Bus-Routing-Auditor.git
-```
-
-Mirror 저장소를 사용할 수도 있습니다.
-
-```bash
-git clone https://github.com/SeunggyunYou/Wwise-Bus-Routing-Auditor.git
 ```
 
 또는 페이지 상단 **Code → Download ZIP** 으로 다운로드 후 원하는 위치에 압축 해제.
