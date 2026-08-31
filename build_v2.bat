@@ -33,4 +33,4 @@ call npm run tauri -- build
 if errorlevel 1 exit /b 1
 
 echo.
-echo [DONE] src-tauri\target\release\bundle\nsis\Bus Routing Auditor_2.0.0_x64-setup.exe
+echo [DONE] src-tauri\target\release\bundle\nsis\Bus Routing Auditor_2.0.1_x64-setup.exe

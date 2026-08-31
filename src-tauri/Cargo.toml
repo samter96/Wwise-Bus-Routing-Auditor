@@ -1,6 +1,6 @@
 [package]
 name = "bus-routing-auditor"
-version = "2.0.0"
+version = "2.0.1"
 description = "Wwise bus routing integrity auditor"
 authors = ["Bus Routing Auditor"]
 edition = "2021"

@@ -161,6 +161,7 @@
 ## 2026-08-31
 
 ### 배포
+- 릴리스 태그 충돌을 피하고 최신 GitHub 다운로드가 정확한 커밋을 가리키도록 버전을 `V.2.0.1`로 승격.
 - README 설치 안내를 Tauri V2 기준으로 정리하고 GitHub Releases 최신 설치 파일 다운로드 경로를 추가.
 - `samter96/Wwise-Bus-Routing-Auditor` primary 저장소와 `SeunggyunYou/Wwise-Bus-Routing-Auditor` mirror 저장소에 같은 업데이트를 배포하도록 준비.
 - git 배포에서 `node_modules`, `dist`, `build`, `src-tauri/target`, PyInstaller sidecar exe 등 로컬/빌드 산출물을 제외하도록 `.gitignore` 정리.

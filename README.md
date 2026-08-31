@@ -45,7 +45,7 @@ Wwise Authoring Tool의 **Tools 메뉴**에서 실행하는 버스 라우팅 검
 
 ### 빠른 설치 — 최신 릴리스 사용
 
-설치 파일만 필요한 경우 GitHub Releases에서 최신 `Bus Routing Auditor_2.0.0_x64-setup.exe` 를 다운로드해 실행합니다.
+설치 파일만 필요한 경우 GitHub Releases에서 최신 `Bus Routing Auditor_2.0.1_x64-setup.exe` 를 다운로드해 실행합니다.
 
 - Primary: [samter96/Wwise-Bus-Routing-Auditor Releases](https://github.com/samter96/Wwise-Bus-Routing-Auditor/releases/latest)
 - Mirror: [SeunggyunYou/Wwise-Bus-Routing-Auditor Releases](https://github.com/SeunggyunYou/Wwise-Bus-Routing-Auditor/releases/latest)
@@ -88,7 +88,7 @@ build_v2.bat
 
 ```
 src-tauri\target\release\bus-routing-auditor.exe
-src-tauri\target\release\bundle\nsis\Bus Routing Auditor_2.0.0_x64-setup.exe
+src-tauri\target\release\bundle\nsis\Bus Routing Auditor_2.0.1_x64-setup.exe
 ```
 
 ### 3단계 — Wwise Tools 메뉴 등록
@@ -304,4 +304,4 @@ Wwise-Bus-Routing-Auditor\
 
 ## 버전
 
-**V.2.0.0** — 2026-08-31
+**V.2.0.1** — 2026-08-31
