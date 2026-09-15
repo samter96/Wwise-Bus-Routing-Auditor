@@ -59,7 +59,7 @@ async function demoRequest<T>(command: string, payload: Record<string, unknown>)
     case "ping":
       return { version: "V.2.0.1", ready: true } as T;
     case "connect":
-      return { connected: true, projectName: "DX_Wwise", buses: ["AMB_Main", "Music_Main", "SFX_Main", "UI_Main", "VO_Main"] } as T;
+      return { connected: true, projectName: "Sample_Wwise", buses: ["AMB_Main", "Music_Main", "SFX_Main", "UI_Main", "VO_Main"] } as T;
     case "get_config":
       return { config: demoCurrentConfig } as T;
     case "save_config":
