@@ -41,8 +41,8 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
           <button
             className="hub-badge"
             onClick={openHub}
-            title={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
-            aria-label={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
+            title={language === "ko" ? "YSG Audio Labs 허브 열기" : "Open the YSG Audio Labs hub"}
+            aria-label={language === "ko" ? "YSG Audio Labs 허브 열기" : "Open the YSG Audio Labs hub"}
           >
             <img src={hubLink.logoUrl} alt="" draggable={false} />
             <span>{hubLink.label}</span>
