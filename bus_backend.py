@@ -15,7 +15,7 @@ try:
 except ImportError:
     WaapiClient = None
 
-VERSION = "V.2.0.0"
+VERSION = "V.2.0.1"
 WAAPI_URL = "ws://127.0.0.1:8080/waapi"
 CONFIG_FILE = "bus_routing_rules.json"
 FIND_CMD_PRIMARY = [

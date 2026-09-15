@@ -57,7 +57,7 @@ async function demoRequest<T>(command: string, payload: Record<string, unknown>)
   await new Promise((resolve) => setTimeout(resolve, command === "scan" ? 900 : 140));
   switch (command) {
     case "ping":
-      return { version: "V.2.0.0", ready: true } as T;
+      return { version: "V.2.0.1", ready: true } as T;
     case "connect":
       return { connected: true, projectName: "DX_Wwise", buses: ["AMB_Main", "Music_Main", "SFX_Main", "UI_Main", "VO_Main"] } as T;
     case "get_config":

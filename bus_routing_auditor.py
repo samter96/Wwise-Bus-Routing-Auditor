@@ -9,7 +9,7 @@ try:
 except ImportError:
     WAAPI_AVAILABLE = False
 
-VERSION     = "V.2.0.0"
+VERSION     = "V.2.0.1"
 WAAPI_URL   = "ws://127.0.0.1:8080/waapi"
 SCRIPT_DIR  = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(SCRIPT_DIR, "bus_routing_rules.json")
